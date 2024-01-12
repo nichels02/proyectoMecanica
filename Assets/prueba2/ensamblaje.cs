@@ -65,7 +65,7 @@ public class ensamblaje : MonoBehaviour
                 
                 LaRotacion = transform.rotation.eulerAngles;
                 LaRotacion = LaRotacion.normalized - rotacion.normalized;
-                transform.rotation=calcularRotacion.rotar(LaRotacion);
+                transform.rotation=calcularRotacion.rotar(LaRotacion*Time.deltaTime);
                 print(LaRotacion);
                 //transform.rotation = transform.rotation * LaRotacion;
 
