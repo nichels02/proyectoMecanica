@@ -4,52 +4,58 @@ using UnityEngine;
 
 public class ensamblaje : MonoBehaviour
 {
-    [SerializeField] List<ensamblaje> listaDeObjetosPadre = new List<ensamblaje>();
-    [SerializeField] rotacion calcularRotacion;
-    [SerializeField] bool estaLibre = false;
-    [SerializeField] bool EstaSiendoSujetado = false;
+    [SerializeField] bool fueSoltado = false;
+    Rigidbody MyRigidbody;
+
+    #region posicion_y_rotacion
     [SerializeField] bool YaEstaEnSuPosicion = false;
     [SerializeField] bool YaEstaEnRotacion = false;
     [SerializeField] bool YaEstaEnSuLugar = false;
-    [SerializeField] bool fueSoltado = false;
-    [SerializeField] Vector3 posicion;
-    [SerializeField] float DiferenciaPosicion;
-    [SerializeField] Vector3 rotacion;
-    [SerializeField] Vector3 LaRotacion;
-    [SerializeField] float DiferenciaRotacion;
-    [SerializeField] Rigidbody MyRigidbody;
-    [SerializeField] float velocity;
-    [SerializeField] float velocityRotation;
- 
 
-    // Start is called before the first frame update
-    void Start()
+
+    #region Posicion
+        Vector3 posicion;
+        float DiferenciaPosicion;
+        [SerializeField] float velocity;
+    #endregion
+    #region Rotacion
+        Vector3 rotacion;
+        float DiferenciaRotacion;
+        float tiempoRotacion = 0f;
+        float angleDifference = 0f;
+        Quaternion rotacionInicial;
+    #endregion
+
+
+    
+    #endregion
+
+
+    
+
+
+
+    private void Awake()
     {
-        posicion.x = transform.position.x;
-        posicion.y = transform.position.y;
-        posicion.z = transform.position.z;
-
-        rotacion = transform.rotation.eulerAngles;
-
-        if (listaDeObjetosPadre.Count == 0)
-        {
-            estaLibre = true;
-        }
+        MyRigidbody = GetComponent<Rigidbody>();
     }
 
-    // Update is called once per frame
+    void Start()
+    {
+        
+    }
     void Update()
     {
-        if (EstaSiendoSujetado == false && YaEstaEnSuLugar == false && fueSoltado==true)
+        if (YaEstaEnSuLugar == false && fueSoltado == true)
         {
-            if (YaEstaEnSuPosicion==false && posicion[0] != transform.position.x || posicion[1] != transform.position.y || posicion[2] != transform.position.z)
+            if (YaEstaEnSuPosicion == false && posicion[0] != transform.position.x || posicion[1] != transform.position.y || posicion[2] != transform.position.z)
             {
-                if (MyRigidbody.velocity==Vector3.zero)
+                if (MyRigidbody.velocity == Vector3.zero)
                 {
                     MyRigidbody.velocity = new Vector3(posicion.x - transform.position.x, posicion.y - transform.position.y, posicion.z - transform.position.z).normalized * velocity;
                 }
-                
-                DiferenciaPosicion =  Vector3.Distance(transform.position, posicion);
+
+                DiferenciaPosicion = Vector3.Distance(transform.position, posicion);
                 if (DiferenciaPosicion < 0.01f)
                 {
                     MyRigidbody.velocity = Vector3.zero;
@@ -60,63 +66,32 @@ public class ensamblaje : MonoBehaviour
 
 
 
-            if (YaEstaEnRotacion==false && rotacion.x != transform.rotation.x || rotacion.y != transform.rotation.y || rotacion.z != transform.rotation.z)
+            if (YaEstaEnRotacion == false && rotacion.x != transform.rotation.x || rotacion.y != transform.rotation.y || rotacion.z != transform.rotation.z)
             {
-                
-                LaRotacion = transform.rotation.eulerAngles;
-                LaRotacion = LaRotacion.normalized - rotacion.normalized;
-                transform.rotation=calcularRotacion.rotar(LaRotacion*Time.deltaTime);
-                print(LaRotacion);
-                //transform.rotation = transform.rotation * LaRotacion;
 
-
-
-
-
-
-                // Verifica la diferencia entre la dirección actual y la dirección objetivo
-                float angleDifference = Vector3.Angle(transform.rotation.eulerAngles, rotacion);
-                print(angleDifference);
-                // Si la diferencia es menor que el umbral, establece la rotación objetivo directamente
-                if (angleDifference < 0.001f)
+                if (tiempoRotacion == 0)
                 {
-                    Quaternion miQuaternion = Quaternion.LookRotation(rotacion);
-
-                    transform.rotation = miQuaternion;
-                    YaEstaEnRotacion = true;
+                    rotacionInicial = transform.rotation;
+                    angleDifference = Vector3.Distance(transform.eulerAngles, rotacion) / 5000;
                 }
+
+                float fraccionRotada = tiempoRotacion / angleDifference;
+
+                transform.rotation = Quaternion.Lerp(rotacionInicial, Quaternion.Euler(rotacion), fraccionRotada);
+
+                tiempoRotacion += Time.deltaTime;
+
+
+
             }
             else
             {
+                tiempoRotacion = 0;
                 YaEstaEnRotacion = true;
             }
 
-            /*
-            if(YaEstaEnRotacion==false && rotacion.x!=transform.rotation.x || rotacion.y != transform.rotation.y || rotacion.z != transform.rotation.z)
-            {
-                // Calcula la rotación necesaria para mirar hacia el vector objetivo
-                Quaternion targetQuaternion = Quaternion.LookRotation(rotacion - transform.position);
 
-                // Interpola suavemente hacia la rotación objetivo
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetQuaternion, velocityRotation);
-
-                // Verifica la diferencia entre la rotación actual y la rotación objetivo
-                DiferenciaRotacion = Quaternion.Angle(transform.rotation, targetQuaternion);
-
-                // Si la diferencia es menor que el umbral, establece la rotación objetivo directamente
-                if (DiferenciaRotacion < 0.001f)
-                {
-                    transform.rotation = targetQuaternion;
-                    YaEstaEnRotacion = true;
-                }
-            }
-            else
-            {
-                YaEstaEnRotacion = true;
-            }
-            */
-
-            if (YaEstaEnRotacion==true && YaEstaEnSuPosicion == true)
+            if (YaEstaEnRotacion == true && YaEstaEnSuPosicion == true)
             {
                 YaEstaEnSuPosicion = false;
                 YaEstaEnSuLugar = true;
@@ -124,6 +99,21 @@ public class ensamblaje : MonoBehaviour
             }
 
         }
+
+    }
+
+
+
+
+
+    public void YaEstaSuelto()
+    {
+        posicion.x = transform.position.x;
+        posicion.y = transform.position.y;
+        posicion.z = transform.position.z;
+
+        rotacion = transform.rotation.eulerAngles;
+
         
     }
 }
